@@ -27,3 +27,17 @@ Those instructions are from orithena and slightly modified
   * Access token        -> oauth_token
   * Access token secret -> oauth_token_secret
 * Re-check the key's access level below the token secret.
+
+
+## USE ##
+
+Put the **start.py** in a cronjob or start it from time to time manually.  
+Make sure you call it not more than every 5 minutes (Twitter does NOT like spam!)  
+If you unfollow someone by intention, you can run
+  start.py --mode=mark iRemoved
+That will set ALL persons listed to **removed by me** and will never ever be displayed as "LOST".
+
+## TROUBLESHOOTING ##
+
+When you get an error like **.... DOES NOT EXIST!** rename **iFollow.sqlite**.
+Maybe you need a "restart", because its indev and I messed the DB up.

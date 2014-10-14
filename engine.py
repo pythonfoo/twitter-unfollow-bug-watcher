@@ -12,8 +12,15 @@ import collections
 class engine(object):
 
 	def __init__(self):
+		self.version = '0.0.2'
+
+
+		# tables
 		self.tableFollowing = 'iFollow'
-		self.tableUserInfo= 'userInfo'
+		self.tableUserInfo = 'userInfo'
+		self.tableMissing = 'iMiss'
+		self.tableSettings = 'settings'
+
 		self.dbConnection = None
 		self.dbCursor = None
 		self.twitter = twython.Twython(app_key=config.TWITTER_CONSUMER_KEY,
@@ -22,11 +29,13 @@ class engine(object):
 										oauth_token_secret=config.TWITTER_TOKEN_SECRET)
 
 		if self.checkDb() == False:
-			Exception('DB ERROR!')
+			raise Exception('DB ERROR!')
 
 		self.connectDb()
 
 	def checkDb(self):
+		# http://zetcode.com/db/sqlitepythontutorial/
+
 		#  check if DB exist
 		if not os.path.isfile(config.DB_NAME):
 			print('Creating DB ' + config.DB_NAME + ' ...') #  create DB
@@ -37,15 +46,50 @@ class engine(object):
 				con.commit()
 				cur.execute('CREATE TABLE ' + self.tableUserInfo + '(ID INTEGER PRIMARY KEY AUTOINCREMENT, twitterId TEXT, name TEXT, screenName TEXT)')
 				con.commit()
+				cur.execute('CREATE TABLE ' + self.tableMissing + '(ID INTEGER PRIMARY KEY AUTOINCREMENT, userInfoId INT)')
+				con.commit()
+				cur.execute('CREATE TABLE ' + self.tableSettings + '(ID INTEGER PRIMARY KEY AUTOINCREMENT, property TEXT, value TEXT)')
+				con.commit()
+
+				cur.execute('INSERT INTO ' + self.tableSettings + " (property, value) VALUES(?, ?);", ('version', self.version))
+				con.commit()
+			con.close()
 
 		#TODO: check DB!
+		con = sqlite3.connect(config.DB_NAME)
+		with con:
+			cur = con.cursor()
+
+			cur.execute('PRAGMA table_info(' + self.tableFollowing + ')')
+			data = cur.fetchall()
+			if not data:
+				raise Exception(self.tableFollowing + ' DOES NOT EXIST!')
+
+			cur.execute('PRAGMA table_info(' + self.tableUserInfo + ')')
+			data = cur.fetchall()
+			if not data:
+				raise Exception(self.tableUserInfo + ' DOES NOT EXIST!')
+
+			cur.execute('PRAGMA table_info(' + self.tableMissing + ')')
+			data = cur.fetchall()
+			if not data:
+				raise Exception(self.tableMissing + ' DOES NOT EXIST!')
+
+			cur.execute('PRAGMA table_info(' + self.tableSettings + ')')
+			data = cur.fetchall()
+			if not data:
+				raise Exception(self.tableSettings + ' DOES NOT EXIST!')
+		con.close()
+
 		return True
 
-	def dict_factory(cursor, row):
-		d = {}
-		for idx,col in enumerate(cursor.description):
-			d[col[0]] = row[idx]
-		return d
+	# not needed anymore!
+	# sqlite3.Row
+	#def dict_factory(cursor, row):
+	#	d = {}
+	#	for idx,col in enumerate(cursor.description):
+	#		d[col[0]] = row[idx]
+	#	return d
 
 	def connectDb(self):
 		self.dbConnection = sqlite3.connect(config.DB_NAME)
@@ -54,7 +98,6 @@ class engine(object):
 		self.dbCursor = self.dbConnection.cursor()
 
 		# configure
-
 		self.dbConnection.text_factory = str
 
 	def retrieveCurrentFollowing(self):
@@ -133,6 +176,16 @@ class engine(object):
 
 		return rows
 
+	def setMarkAs(self, mode):
+		self.dbCursor.execute('SELECT * FROM ' + self.tableMissing)
+		rows = self.dbCursor.fetchall()
+
+		for row in rows:
+			self.dbCursor.execute('UPDATE ' + self.tableFollowing + ' SET deletedByMe=? WHERE ID=?', (mode, row['userInfoId']))
+			self.dbConnection.commit()
+			print 'set ' + str(row['userInfoId']) + ' to ' + str(mode)
+
+
 	def doCheck(self):
 		currentFollowing = self.retrieveCurrentFollowing()
 		#self.getDetailsForIds(currentFollower)
@@ -166,10 +219,21 @@ class engine(object):
 		#lastFollowingDict = {}
 		#for user in self.getFollowingFromDb():
 		#	lastFollowingDict[user['twitterId']] = user
-
+		notFoundIds = []
 		for user in lastFollowing:
 			if not user['twitterId'] in currentFollowing:
-				print 'you lost| ID: "{}" | name: "{}" | screen name: "{}"'.format(user['ID'], user['name'], user['screenName'])
+				notFoundIds.append(user['ID'])
+				print 'you lost one| ID: "{}" | name: "{}" | screen name: "{}"'.format(user['ID'], user['name'], user['screenName'])
+
+		self.dbCursor.execute('DELETE FROM ' + self.tableMissing)
+		self.dbCursor.execute('VACUUM')
+		self.dbConnection.commit()
+
+		if len(notFoundIds) > 1:
+			self.dbCursor.executemany('INSERT INTO ' + self.tableMissing + ' (userInfoId) VALUES(?)', notFoundIds)
+		elif len(notFoundIds) == 1:
+			self.dbCursor.execute('INSERT INTO ' + self.tableMissing + ' (userInfoId) VALUES(?)', (notFoundIds[0],))
+		self.dbConnection.commit()
 
 if __name__ == '__main__':
 	eng = engine()
