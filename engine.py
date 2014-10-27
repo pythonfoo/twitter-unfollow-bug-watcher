@@ -104,6 +104,8 @@ class engine(object):
 		ids = []
 		cursor = -1
 		while cursor != 0:
+			# possible error:
+			# twython.exceptions.TwythonRateLimitError: Twitter API returned a 429 (Too Many Requests), Rate limit exceeded
 			apiData = self.twitter.get_friends_ids(cursor=cursor) #if group == 'followers' else twitter.get_friends_ids(cursor=cursor)
 			#print 'retrieved (next): %s (%s)' % (len(apiData['ids']), apiData['next_cursor'])
 
@@ -230,7 +232,8 @@ class engine(object):
 		self.dbConnection.commit()
 
 		if len(notFoundIds) > 1:
-			self.dbCursor.executemany('INSERT INTO ' + self.tableMissing + ' (userInfoId) VALUES(?)', notFoundIds)
+			listOfList = [(notFoundIds[i],) for i in range(0, len(notFoundIds))]
+			self.dbCursor.executemany('INSERT INTO ' + self.tableMissing + ' (userInfoId) VALUES(?)', listOfList)
 		elif len(notFoundIds) == 1:
 			self.dbCursor.execute('INSERT INTO ' + self.tableMissing + ' (userInfoId) VALUES(?)', (notFoundIds[0],))
 		self.dbConnection.commit()
