@@ -119,9 +119,11 @@ class engine(object):
 		return fixedIds
 
 	def partition(self, alist, indices):
-		return [alist[i:j] for i, j in zip([0]+indices, indices+[None])]
+		return [alist[i:j] for i, j in zip([0]+list(indices), list(indices)+[None])]
 
 	def convertToUtf8(self, data):
+		if sys.version_info[0] == 3:
+			return data
 		if isinstance(data, basestring):
 			#return str(data)
 			return data.encode('utf-8')
@@ -144,8 +146,8 @@ class engine(object):
 			try:
 				apiData = self.twitter.lookup_user(user_id=user_ids_string)
 			except Exception as ex:
-				print 'Cannot retrieve data for User %s' % user_ids_string
-				print ex
+				print ('Cannot retrieve data for User %s' % user_ids_string)
+				print (ex)
 
 			for user in apiData:
 				#{u'follow_request_sent': False, u'profile_use_background_image': True, u'profile_text_color': u'333333', u'default_profile_image': False, u'id': 2792649582L, u'profile_background_image_url_https': u'https://abs.twimg.com/images/themes/theme14/bg.gif', u'verified': False, u'profile_location': None, u'profile_image_url_https': u'https://pbs.twimg.com/profile_images/515617762111000576/PYnTser9_normal.png', u'profile_sidebar_fill_color': u'DDEEF6', u'entities': {u'url': {u'urls': [{u'url': u'http://t.co/dRvUijIU01', u'indices': [0, 22], u'expanded_url': u'http://spacestationloma.com/', u'display_url': u'spacestationloma.com'}]}, u'description': {u'urls': []}}, u'followers_count': 1, u'profile_sidebar_border_color': u'000000', u'id_str': u'2792649582', u'profile_background_color': u'131516', u'listed_count': 0, u'status': {u'contributors': None, u'truncated': False, u'text': u'SPACE: The final fro... DAMN!\nits really busy out here http://t.co/ap8IOBFKyU', u'in_reply_to_status_id': None, u'id': 515618567216463873L, u'favorite_count': 0, u'source': u'<a href="http://twitter.com" rel="nofollow">Twitter Web Client</a>', u'retweeted': False, u'coordinates': None, u'entities': {u'symbols': [], u'user_mentions': [], u'hashtags': [], u'urls': [], u'media': [{u'expanded_url': u'http://twitter.com/SpaceStationL/status/515618567216463873/photo/1', u'display_url': u'pic.twitter.com/ap8IOBFKyU', u'url': u'http://t.co/ap8IOBFKyU', u'media_url_https': u'https://pbs.twimg.com/media/ByfYWn_CIAA5W89.png', u'id_str': u'515618565559296000', u'sizes': {u'large': {u'h': 682, u'resize': u'fit', u'w': 1024}, u'small': {u'h': 226, u'resize': u'fit', u'w': 340}, u'medium': {u'h': 399, u'resize': u'fit', u'w': 600}, u'thumb': {u'h': 150, u'resize': u'crop', u'w': 150}}, u'indices': [55, 77], u'type': u'photo', u'id': 515618565559296000L, u'media_url': u'http://pbs.twimg.com/media/ByfYWn_CIAA5W89.png'}]}, u'in_reply_to_screen_name': None, u'id_str': u'515618567216463873', u'retweet_count': 0, u'in_reply_to_user_id': None, u'favorited': False, u'geo': None, u'in_reply_to_user_id_str': None, u'possibly_sensitive': False, u'lang': u'en', u'created_at': u'Fri Sep 26 21:47:00 +0000 2014', u'in_reply_to_status_id_str': None, u'place': None}, u'is_translation_enabled': False, u'utc_offset': None, u'statuses_count': 3, u'description': u'SPAAACE... IM IN SPACE... A SPACE STATION... IN SPACE', u'friends_count': 1, u'location': u'Sector: LOMA', u'profile_link_color': u'ABB8C2', u'profile_image_url': u'http://pbs.twimg.com/profile_images/515617762111000576/PYnTser9_normal.png', u'following': True, u'geo_enabled': False, u'profile_banner_url': u'https://pbs.twimg.com/profile_banners/2792649582/1411767336', u'profile_background_image_url': u'http://abs.twimg.com/images/themes/theme14/bg.gif', u'name': u'SpaceStation: Loma', u'lang': u'de', u'profile_background_tile': True, u'favourites_count': 2, u'screen_name': u'SpaceStationL', u'notifications': False, u'url': u'http://t.co/dRvUijIU01', u'created_at': u'Fri Sep 05 22:08:27 +0000 2014', u'contributors_enabled': False, u'time_zone': None, u'protected': False, u'default_profile': False, u'is_translator': False}
@@ -185,17 +187,17 @@ class engine(object):
 		for row in rows:
 			self.dbCursor.execute('UPDATE ' + self.tableFollowing + ' SET deletedByMe=? WHERE ID=?', (mode, row['userInfoId']))
 			self.dbConnection.commit()
-			print 'set ' + str(row['userInfoId']) + ' to ' + str(mode)
+			print ('set ' + str(row['userInfoId']) + ' to ' + str(mode))
 
 
 	def doCheck(self):
 		currentFollowing = self.retrieveCurrentFollowing()
 		#self.getDetailsForIds(currentFollower)
 		lastFollowing = self.getFollowingFromDb()
-		print 12*'*'
-		print 'currentFollowing:', len(currentFollowing)
-		print 'lastFollowing:', len(lastFollowing)
-		print 12*'*'
+		print (12*'*')
+		print ('currentFollowing:', len(currentFollowing))
+		print ('lastFollowing:', len(lastFollowing))
+		print (12*'*')
 
 		# SYNC!
 		foundIds = []
@@ -225,7 +227,7 @@ class engine(object):
 		for user in lastFollowing:
 			if not user['twitterId'] in currentFollowing:
 				notFoundIds.append(user['ID'])
-				print 'you lost one| ID: "{}" | name: "{}" | screen name: "{}"'.format(user['ID'], user['name'], user['screenName'])
+				print ('you lost one| ID: "{}" | name: "{}" | screen name: "{}"'.format(user['ID'], user['name'], user['screenName']))
 
 		self.dbCursor.execute('DELETE FROM ' + self.tableMissing)
 		self.dbCursor.execute('VACUUM')
