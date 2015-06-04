@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
+
 import engine
 import os
 import shutil
@@ -13,7 +15,7 @@ if not os.path.isfile('config.py'):
 
 import config
 if config.TWITTER_CONSUMER_KEY == '' or config.TWITTER_CONSUMER_SECRET == '' or config.TWITTER_ACCESS_TOKEN == '' or config.TWITTER_TOKEN_SECRET == '':
-	print 'please fill all the KEYs and TOKENs in config.py'
+	print ('please fill all the KEYs and TOKENs in config.py')
 	exit(666)
 
 
@@ -37,11 +39,11 @@ mode = 'check'
 subMode = ''
 for arg in sys.argv:
 	if '-h' in arg or '--help' in arg:
-		print 'by default this program does not need parameters for the check'
-		print ''
-		print 'IF there are "missing" following accounts and you have unfollowed them by yourself, use:'
-		print 'start.py --mode=mark iRemoved'
-		print 'they will be tagged as "removed by me" and wont show up again.'
+		print ('by default this program does not need parameters for the check')
+		print ('')
+		print ('IF there are "missing" following accounts and you have unfollowed them by yourself, use:')
+		print ('start.py --mode=mark iRemoved')
+		print ('they will be tagged as "removed by me" and wont show up again.')
 		exit()
 	if '--mode=' in arg:
 		mode = arg.replace('--mode=', '')
@@ -53,7 +55,7 @@ if mode == 'check':
 	eng.doCheck()
 elif mode == 'mark':
 	if subMode == '':
-		print 'please set "iRemoved" to mark ALL lost followed as "removed by you"!'
+		print ('please set "iRemoved" to mark ALL lost followed as "removed by you"!')
 	elif subMode == 'iRemoved':
 		eng = engine.engine()
 		eng.setMarkAs(1)
