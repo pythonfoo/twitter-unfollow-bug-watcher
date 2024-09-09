@@ -1,3 +1,5 @@
+Due to twitters enshittification and API access costing up to $5000/month (as time of writing) this project is suspended.  
+
 Note:
 Inspiration and parts of the code are from orithena: https://github.com/orithena/twitter-follower-report
 
